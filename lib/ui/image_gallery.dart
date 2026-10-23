@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show AppStrings, Text;
 
 import '../tmdb.dart';
 import 'glass.dart';
@@ -155,7 +156,7 @@ class _ImageGalleryPageState extends State<_ImageGalleryPage> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: IconButton.filledTonal(
-                    tooltip: 'Foto precedente',
+                    tooltip: AppStrings.translate('Foto precedente'),
                     onPressed: () => _controller.previousPage(
                         duration: const Duration(milliseconds: 180),
                         curve: Curves.easeOut),
@@ -166,7 +167,7 @@ class _ImageGalleryPageState extends State<_ImageGalleryPage> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton.filledTonal(
-                    tooltip: 'Foto successiva',
+                    tooltip: AppStrings.translate('Foto successiva'),
                     onPressed: () => _controller.nextPage(
                         duration: const Duration(milliseconds: 180),
                         curve: Curves.easeOut),

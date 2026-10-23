@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show Text;
 import 'package:provider/provider.dart';
 
 import '../store.dart';

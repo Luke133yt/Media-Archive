@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show Text;
 import 'package:provider/provider.dart';
 
 import '../store.dart';
 
 String _language(BuildContext context) =>
-    context.read<AppState>().tmdbLang.split(RegExp(r'[-_]')).first;
+    context.read<AppState>().appLanguage;
 
 String _translate(String code, String italian, {int? added, int? unmatched}) {
   final lang = code.toLowerCase();

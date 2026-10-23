@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show AppStrings, Text;
 import 'app_snack.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -142,7 +143,8 @@ class _DetailPageState extends State<DetailPage> {
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => runSearch(),
                     decoration: InputDecoration(
-                      labelText: 'Titolo del film o della serie',
+                      labelText: AppStrings.translate(
+                          'Titolo del film o della serie'),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.search),
                         onPressed: runSearch,
@@ -163,7 +165,7 @@ class _DetailPageState extends State<DetailPage> {
                                     width: 42,
                                     height: 62,
                                     radius: 4),
-                                title: Text(r.title),
+                                title: Text(r.title, localize: false),
                                 subtitle: Text(
                                     '${r.year ?? 'Anno sconosciuto'} · ${r.type == 'tv' ? 'Serie TV' : 'Film'}'),
                                 onTap: () => Navigator.pop(ctx, r),
@@ -229,7 +231,8 @@ class _DetailPageState extends State<DetailPage> {
               TextField(
                 controller: who,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Prestato a'),
+                decoration: InputDecoration(
+                    labelText: AppStrings.translate('Prestato a')),
               ),
               const SizedBox(height: 12),
               ListTile(
@@ -272,7 +275,8 @@ class _DetailPageState extends State<DetailPage> {
               ),
               TextField(
                 controller: notes,
-                decoration: const InputDecoration(labelText: 'Note'),
+                decoration: InputDecoration(
+                    labelText: AppStrings.translate('Note')),
               ),
             ]),
           ),
@@ -325,13 +329,13 @@ class _DetailPageState extends State<DetailPage> {
       appBar: AppBar(
         actions: [
           IconButton(
-            tooltip: 'Sostituisci titolo da TMDB',
+            tooltip: AppStrings.translate('Sostituisci titolo da TMDB'),
             onPressed: () => _swapTmdb(m),
             icon: const Icon(Icons.swap_horiz),
           ),
           if (m.tmdbId != null)
             IconButton(
-              tooltip: 'Aggiorna da TMDB',
+              tooltip: AppStrings.translate('Aggiorna da TMDB'),
               onPressed: _refreshing ? null : () => _refresh(m),
               icon: _refreshing
                   ? const SizedBox(
@@ -341,13 +345,13 @@ class _DetailPageState extends State<DetailPage> {
                   : const Icon(Icons.sync),
             ),
           IconButton(
-            tooltip: 'Modifica',
+            tooltip: AppStrings.translate('Modifica'),
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => Navigator.of(context)
                 .push(MaterialPageRoute(builder: (_) => EditPage(item: m))),
           ),
           IconButton(
-            tooltip: 'Elimina',
+            tooltip: AppStrings.translate('Elimina'),
             icon: const Icon(Icons.delete_outline),
             onPressed: () => _delete(m),
           ),
@@ -426,6 +430,7 @@ class _DetailPageState extends State<DetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(m.title,
+                                localize: false,
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineSmall
@@ -433,6 +438,7 @@ class _DetailPageState extends State<DetailPage> {
                             if (m.originalTitle.isNotEmpty &&
                                 m.originalTitle != m.title)
                               Text(m.originalTitle,
+                                  localize: false,
                                   style: TextStyle(
                                       color: adaptiveTextColor(context,
                                           opacity: .6))),
@@ -477,6 +483,7 @@ class _DetailPageState extends State<DetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(m.format,
+                                localize: false,
                                 style: const TextStyle(
                                     fontSize: 18, fontWeight: FontWeight.w700)),
                             const SizedBox(height: 4),
@@ -595,6 +602,7 @@ class _DetailPageState extends State<DetailPage> {
                             ),
                           if (m.loan!.notes.isNotEmpty)
                             Text(m.loan!.notes,
+                                localize: false,
                                 style: TextStyle(
                                     color: adaptiveTextColor(context,
                                         opacity: .6))),
@@ -703,7 +711,7 @@ class _DetailPageState extends State<DetailPage> {
                                       color: adaptiveTextColor(context,
                                           opacity: .7))),
                             ),
-                          Text(m.overview),
+                          Text(m.overview, localize: false),
                           if (m.genres.isNotEmpty) ...[
                             const SizedBox(height: 10),
                             Wrap(spacing: 6, runSpacing: 6, children: [
@@ -795,6 +803,7 @@ class _DetailPageState extends State<DetailPage> {
                                       ),
                                       const SizedBox(height: 6),
                                       Text(c.name,
+                                          localize: false,
                                           textAlign: TextAlign.center,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
@@ -802,6 +811,7 @@ class _DetailPageState extends State<DetailPage> {
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600)),
                                       Text(c.character,
+                                          localize: false,
                                           textAlign: TextAlign.center,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -839,6 +849,7 @@ class _DetailPageState extends State<DetailPage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(r.content,
+                                      localize: false,
                                       style: TextStyle(
                                           color: adaptiveTextColor(context,
                                               opacity: .7))),
@@ -856,7 +867,7 @@ class _DetailPageState extends State<DetailPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SectionTitle('Note'),
-                          Text(m.notes),
+                          Text(m.notes, localize: false),
                         ],
                       ),
                     ),

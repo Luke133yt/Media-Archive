@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +14,7 @@ class EscapeBackIntent extends Intent {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('en_US');
   await initializeDateFormatting('it_IT');
   final state = AppState();
   await state.load();
@@ -33,6 +35,9 @@ class MediaArchiveApp extends StatelessWidget {
     return MaterialApp(
       navigatorKey: _navigatorKey,
       title: 'Media Archive',
+      locale: Locale(context.watch<AppState>().appLanguage),
+      supportedLocales: const [Locale('en'), Locale('it')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(darkTheme: darkTheme),
       shortcuts: const {

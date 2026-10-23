@@ -1,6 +1,6 @@
 {
-    "name": "media_archive",
-    "short_name": "media_archive",
+    "name": "Media Archive",
+    "short_name": "Media Archive",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

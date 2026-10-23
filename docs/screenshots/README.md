@@ -1,12 +1,10 @@
-# README screenshots
+# Media Archive screenshots
 
-Save real screenshots of the running application in this folder. The root README expects:
+The README displays the real application captures in this directory:
 
-- `library.png`
-- `details.png`
-- `movie-night.png`
-- `settings.png`
+- `library.png` — collection and search
+- `add-media.png` — adding a title
+- `movie-night.png` — temporary shared collection
+- `settings.png` — preferences and data tools
 
-On Windows, use **Win + Shift + S**, capture the app window, and save each PNG with the names above. Use sample records and remove any personal notes, barcodes, addresses or loan information before committing. Then enable the HTML image block in the root README.
-
-Do not replace these with mockups: screenshots should show the actual current application.
+For future screenshots, capture the running app and use sample records without personal notes, barcodes, addresses or loan information.

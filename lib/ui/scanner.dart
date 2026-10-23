@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show AppStrings, Text;
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'glass.dart';
@@ -38,7 +39,9 @@ Future<String?> _manualEntry(BuildContext context) {
           controller: c,
           autofocus: true,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(hintText: 'EAN / UPC'),
+          decoration: InputDecoration(
+            hintText: AppStrings.translate('EAN / UPC'),
+          ),
           onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
         ),
       ]),

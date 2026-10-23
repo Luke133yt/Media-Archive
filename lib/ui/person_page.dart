@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show Text;
 import 'package:provider/provider.dart';
 
 import '../models.dart';
@@ -62,6 +63,7 @@ class _PersonPageState extends State<PersonPage> {
                     const Icon(Icons.person_off_outlined, size: 42),
                     const SizedBox(height: 12),
                     Text(snapshot.error.toString(),
+                        localize: false,
                         textAlign: TextAlign.center),
                     const SizedBox(height: 12),
                     FilledButton.tonal(
@@ -104,6 +106,7 @@ class _PersonPageState extends State<PersonPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(person.name,
+                                localize: false,
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineSmall
@@ -112,6 +115,7 @@ class _PersonPageState extends State<PersonPage> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 6),
                                 child: Text(person.knownForDepartment,
+                                    localize: false,
                                     style: TextStyle(
                                         color: adaptiveTextColor(context,
                                             opacity: .7))),
@@ -132,7 +136,8 @@ class _PersonPageState extends State<PersonPage> {
                             if (person.placeOfBirth?.isNotEmpty == true)
                               Padding(
                                 padding: const EdgeInsets.only(top: 6),
-                                child: Text(person.placeOfBirth!),
+                                child: Text(person.placeOfBirth!,
+                                    localize: false),
                               ),
                             const SizedBox(height: 12),
                             Text('$movies film · $shows serie TV',
@@ -176,7 +181,7 @@ class _PersonPageState extends State<PersonPage> {
                             radius: 5,
                             size: 'w154',
                           ),
-                          title: Text(credit.title),
+                          title: Text(credit.title, localize: false),
                           subtitle: Text([
                             if (credit.date?.isNotEmpty == true)
                               credit.date!.length >= 4

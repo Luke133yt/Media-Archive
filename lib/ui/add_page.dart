@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show AppStrings, Text;
 import 'package:provider/provider.dart';
 
 import '../models.dart';
@@ -125,7 +126,8 @@ class _AddPageState extends State<AddPage> {
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _search(),
                     decoration: InputDecoration(
-                      hintText: 'Cerca su TMDB (film o serie TV)',
+                    hintText: AppStrings.translate(
+                        'Cerca su TMDB (film o serie TV)'),
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.arrow_forward),
@@ -136,7 +138,8 @@ class _AddPageState extends State<AddPage> {
                 ),
                 const SizedBox(width: 8),
                 IconButton.filledTonal(
-                  tooltip: 'Scansiona codice a barre',
+                  tooltip:
+                      AppStrings.translate('Scansiona codice a barre'),
                   onPressed: _scan,
                   icon: const Icon(Icons.qr_code_scanner),
                 ),
@@ -198,6 +201,7 @@ class _AddPageState extends State<AddPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(r.title,
+                                localize: false,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w700, fontSize: 15)),
                             Text(
@@ -211,6 +215,7 @@ class _AddPageState extends State<AddPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(r.overview,
+                                localize: false,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(

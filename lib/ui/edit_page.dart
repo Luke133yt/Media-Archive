@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show AppStrings, Text;
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -215,7 +216,8 @@ class _EditPageState extends State<EditPage> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _title,
-                    decoration: const InputDecoration(labelText: 'Titolo'),
+                    decoration: InputDecoration(
+                        labelText: AppStrings.translate('Titolo')),
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? 'Inserisci un titolo'
                         : null,
@@ -224,19 +226,23 @@ class _EditPageState extends State<EditPage> {
                   TextFormField(
                     controller: _original,
                     decoration:
-                        const InputDecoration(labelText: 'Titolo originale'),
+                        InputDecoration(
+                            labelText:
+                                AppStrings.translate('Titolo originale')),
                   ),
                   const SizedBox(height: 10),
                   TextFormField(
                     controller: _year,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Anno'),
+                    decoration: InputDecoration(
+                        labelText: AppStrings.translate('Anno')),
                   ),
                   const SizedBox(height: 10),
                   TextFormField(
                     controller: _overview,
                     maxLines: 4,
-                    decoration: const InputDecoration(labelText: 'Trama'),
+                    decoration: InputDecoration(
+                        labelText: AppStrings.translate('Trama')),
                   ),
                 ]),
               ),
@@ -269,9 +275,10 @@ class _EditPageState extends State<EditPage> {
                         child: TextField(
                           controller: _newFormat,
                           onSubmitted: (_) => _addFormat(),
-                          decoration: const InputDecoration(
-                            labelText: 'Altro formato',
-                            hintText: 'Scrivi un formato e premi +',
+                          decoration: InputDecoration(
+                            labelText: AppStrings.translate('Altro formato'),
+                            hintText: AppStrings.translate(
+                                'Scrivi un formato e premi +'),
                           ),
                         ),
                       ),
@@ -292,9 +299,11 @@ class _EditPageState extends State<EditPage> {
                     const SectionTitle('Dettagli della tua copia'),
                     TextFormField(
                       controller: _region,
-                      decoration: const InputDecoration(
-                        labelText: 'Standard / regione',
-                        hintText: 'PAL, NTSC, Region 2…',
+                      decoration: InputDecoration(
+                        labelText:
+                            AppStrings.translate('Standard / regione'),
+                        hintText:
+                            AppStrings.translate('PAL, NTSC, Region 2…'),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -314,21 +323,24 @@ class _EditPageState extends State<EditPage> {
                     TextFormField(
                       controller: _lang,
                       decoration:
-                          const InputDecoration(labelText: 'Lingua del media'),
+                          InputDecoration(
+                              labelText:
+                                  AppStrings.translate('Lingua del media')),
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: _price,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                          labelText: 'Prezzo pagato', prefixText: '€ '),
+                      decoration: InputDecoration(
+                          labelText: AppStrings.translate('Prezzo pagato'),
+                          prefixText: '€ '),
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: _barcode,
                       decoration: InputDecoration(
-                        labelText: 'Codice a barre',
+                        labelText: AppStrings.translate('Codice a barre'),
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.qr_code_scanner),
                           onPressed: () async {
@@ -366,7 +378,8 @@ class _EditPageState extends State<EditPage> {
                     TextFormField(
                       controller: _notes,
                       maxLines: 3,
-                      decoration: const InputDecoration(labelText: 'Note'),
+                      decoration: InputDecoration(
+                          labelText: AppStrings.translate('Note')),
                     ),
                   ],
                 ),

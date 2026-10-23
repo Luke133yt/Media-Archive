@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show Text;
 
 import 'add_page.dart';
 import 'glass.dart';
