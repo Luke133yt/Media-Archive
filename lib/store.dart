@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'formats.dart';
+import 'localization.dart';
 import 'models.dart';
 import 'tmdb.dart';
 
@@ -12,6 +13,7 @@ class AppState extends ChangeNotifier {
   List<MediaItem> items = [];
   List<String> formats = List.of(defaultFormats);
   String apiKey = '';
+  String appLanguage = 'en';
   String tmdbLang = 'it-IT';
   String mediaLanguage = 'Italiano';
   bool reduceResources = false;
@@ -22,6 +24,8 @@ class AppState extends ChangeNotifier {
   Future<void> load() async {
     _p = await SharedPreferences.getInstance();
     apiKey = _p.getString('apiKey') ?? '';
+    appLanguage = _p.getString('appLanguage') ?? 'en';
+    AppStrings.language = appLanguage;
     reduceResources = _p.getBool('reduceResources') ?? false;
     darkTheme = _p.getBool('darkTheme') ?? true;
 
@@ -63,6 +67,7 @@ class AppState extends ChangeNotifier {
         'items', jsonEncode(items.map((e) => e.toJson()).toList()));
     await _p.setStringList('formats', formats);
     await _p.setString('apiKey', apiKey);
+    await _p.setString('appLanguage', appLanguage);
     await _p.setString('tmdbLang', tmdbLang);
     await _p.setString('mediaLanguage', mediaLanguage);
     await _p.setBool('reduceResources', reduceResources);
@@ -120,12 +125,17 @@ class AppState extends ChangeNotifier {
 
   void updateSettings({
     String? key,
+    String? appLanguage,
     String? lang,
     String? mediaLang,
     bool? reduceResources,
     bool? darkTheme,
   }) {
     if (key != null) apiKey = key;
+    if (appLanguage != null) {
+      this.appLanguage = appLanguage;
+      AppStrings.language = appLanguage;
+    }
     if (lang != null) tmdbLang = lang;
     if (mediaLang != null) mediaLanguage = mediaLang;
     if (reduceResources != null) this.reduceResources = reduceResources;

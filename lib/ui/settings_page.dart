@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show AppStrings, Text;
 import 'app_snack.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -297,7 +298,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         if (v != null) setDlg(() => value = v);
                       },
                       decoration:
-                          const InputDecoration(labelText: 'Formato nell’app'),
+                          InputDecoration(
+                              labelText: AppStrings.translate('Formato nell’app')),
                     ),
                   ]),
               actions: [
@@ -398,7 +400,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             child: ListView(children: [
                           for (final r in results)
                             ListTile(
-                                title: Text(r.title),
+                                title: Text(r.title, localize: false),
                                 subtitle: Text('${r.year ?? ''} · ${r.type}'),
                                 onTap: () async {
                                   final fresh =
@@ -465,6 +467,20 @@ class _SettingsPageState extends State<SettingsPage> {
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 16),
         GlassCard(
+          child: DropdownButtonFormField<String>(
+            initialValue: s.appLanguage,
+            decoration: InputDecoration(
+              labelText: AppStrings.translate('Lingua dell’interfaccia'),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'en', child: Text('English')),
+              DropdownMenuItem(value: 'it', child: Text('Italiano')),
+            ],
+            onChanged: (value) => s.updateSettings(appLanguage: value),
+          ),
+        ),
+        const SizedBox(height: 12),
+        GlassCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -480,14 +496,16 @@ class _SettingsPageState extends State<SettingsPage> {
               TextField(
                 controller: _key,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Chiave TMDB'),
+                decoration: InputDecoration(
+                    labelText: AppStrings.translate('Chiave TMDB')),
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 initialValue:
                     _langs.containsKey(s.tmdbLang) ? s.tmdbLang : 'en-US',
-                decoration:
-                    const InputDecoration(labelText: 'Lingua dei dati TMDB'),
+                decoration: InputDecoration(
+                    labelText:
+                        AppStrings.translate('Lingua dei dati TMDB')),
                 items: [
                   for (final e in _langs.entries)
                     DropdownMenuItem(value: e.key, child: Text(e.value)),
@@ -498,9 +516,11 @@ class _SettingsPageState extends State<SettingsPage> {
               TextField(
                 controller: _mediaLang,
                 onChanged: (v) => s.updateSettings(mediaLang: v),
-                decoration: const InputDecoration(
-                  labelText: 'Lingua predefinita dei media',
-                  helperText: 'Precompilata nei nuovi titoli',
+                decoration: InputDecoration(
+                  labelText:
+                      AppStrings.translate('Lingua predefinita dei media'),
+                  helperText:
+                      AppStrings.translate('Precompilata nei nuovi titoli'),
                 ),
               ),
               const SizedBox(height: 12),
@@ -558,7 +578,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 SectionTitle('Non trovati su TMDB (${_unmatched.length})',
                     trailing: IconButton(
                         onPressed: _exportUnmatched,
-                        tooltip: 'Scarica CSV',
+                        tooltip: AppStrings.translate('Scarica CSV'),
                         icon: const Icon(Icons.download))),
                 Text(
                     'Cerca manualmente ciascun titolo e seleziona il risultato corretto.',
@@ -573,7 +593,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       subtitle: Text(
                           '${_unmatched[i].year ?? 'Anno sconosciuto'} · ${_unmatched[i].format}'),
                       trailing: IconButton(
-                          tooltip: 'Cerca su TMDB',
+                          tooltip: AppStrings.translate('Cerca su TMDB'),
                           icon: const Icon(Icons.search),
                           onPressed: () => _searchUnmatched(_unmatched[i], i))),
               ])),
@@ -658,9 +678,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: TextField(
                     controller: _newFormat,
                     onSubmitted: (_) => _addFormat(s),
-                    decoration: const InputDecoration(
-                      labelText: 'Nuovo formato',
-                      hintText: 'es. CED, Video CD, UMD…',
+                    decoration: InputDecoration(
+                      labelText: AppStrings.translate('Nuovo formato'),
+                      hintText: AppStrings.translate('es. CED, Video CD, UMD…'),
                     ),
                   ),
                 ),

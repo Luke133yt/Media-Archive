@@ -10,21 +10,19 @@ Built with Flutter for Windows, Linux, macOS, Android, iOS and the web. Your lib
 
 ## Screenshots
 
-Screenshots belong in [`docs/screenshots/`](docs/screenshots/). Capture the app with sample data that contains no personal notes, barcodes or loan details, save the images as PNG, then add them here. Suggested views:
-
-- `library.png` — collection grid and search filters
-- `details.png` — a film's information and collection controls
-- `movie-night.png` — temporary shared collection
-- `settings.png` — TMDB, appearance and backup options
-
-Example markup to enable after adding those files:
-
-```html
+<p align="center">
+  <img src="assets/branding/media_archive_logo.png" alt="Media Archive logo" width="180">
+</p>
 <p align="center">
   <img src="docs/screenshots/library.png" alt="Media Archive library" width="48%">
-  <img src="docs/screenshots/details.png" alt="Media Archive title details" width="48%">
+  <img src="docs/screenshots/add-media.png" alt="Add a title" width="48%">
 </p>
-```
+<p align="center">
+  <img src="docs/screenshots/movie-night.png" alt="Movie Night shared collection" width="48%">
+  <img src="docs/screenshots/settings.png" alt="Media Archive settings" width="48%">
+</p>
+
+These screenshots show the app with sample data. Avoid adding personal notes, barcodes or loan details to future captures.
 
 ## Features
 
@@ -38,6 +36,7 @@ Example markup to enable after adding those files:
 - **Movie Night:** import a friend's CSV into a temporary, searchable collection. It is kept separate from your own library and is not saved after leaving the session.
 - Import and export CSV; import JSON/CSV/XML, including Filmotech files; create a full JSON backup.
 - Choose the light or dark theme, reduce animated background effects, and check GitHub for new releases.
+- Switch the interface between English and Italian. English is selected by default; TMDB data language remains a separate setting.
 
 ## Download and install
 
@@ -195,7 +194,7 @@ installer/
   windows.iss           per-user Windows installer definition
 .github/workflows/
   release.yml           tagged multi-platform release builds
-docs/screenshots/       README screenshots (add PNG captures here)
+docs/screenshots/       README screenshots
 ```
 
 ## Known limitations

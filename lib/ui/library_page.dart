@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show AppStrings, Text;
 import 'package:provider/provider.dart';
 
 import '../models.dart';
@@ -72,11 +73,23 @@ class _LibraryPageState extends State<LibraryPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Media Archive',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.w800)),
+                  Row(children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        'assets/branding/media_archive_logo.png',
+                        width: 42,
+                        height: 42,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text('Media Archive',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.w800)),
+                  ]),
                   Text(
                     '${s.items.length} titoli in collezione'
                     '${list.length != s.items.length ? ' • ${list.length} mostrati' : ''}',
@@ -102,8 +115,9 @@ class _LibraryPageState extends State<LibraryPage> {
               Expanded(
                 child: TextField(
                   onChanged: (v) => setState(() => _q = v),
-                  decoration: const InputDecoration(
-                    hintText: 'Cerca titolo, regista, attore, barcode…',
+                  decoration: InputDecoration(
+                    hintText: AppStrings.translate(
+                        'Cerca titolo, regista, attore, barcode…'),
                     filled: false,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
@@ -112,7 +126,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 ),
               ),
               PopupMenuButton<String>(
-                tooltip: 'Ordina',
+                tooltip: AppStrings.translate('Ordina'),
                 icon: const Icon(Icons.sort),
                 initialValue: _sort,
                 onSelected: (v) => setState(() => _sort = v),
@@ -240,6 +254,7 @@ class _Tile extends StatelessWidget {
                       FormatIcon(format: item.format, size: 22),
                       const SizedBox(width: 5),
                       Text(item.format,
+                          localize: false,
                           style: const TextStyle(
                               fontSize: 11, fontWeight: FontWeight.w600)),
                     ]),
@@ -296,6 +311,7 @@ class _Tile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(item.title,
+                    localize: false,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

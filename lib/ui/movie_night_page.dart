@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../localization.dart' show AppStrings, Text;
 
 import '../io_service.dart';
 import '../models.dart';
@@ -66,7 +67,7 @@ class _MovieNightPageState extends State<MovieNightPage> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(item.title),
+        title: Text(item.title, localize: false),
         content: SizedBox(
           width: 520,
           child: SingleChildScrollView(
@@ -99,11 +100,11 @@ class _MovieNightPageState extends State<MovieNightPage> {
                 ],
                 if (item.overview.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  Text(item.overview),
+                  Text(item.overview, localize: false),
                 ],
                 if (item.notes.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  Text('Note: ${item.notes}'),
+                  Text('Note: ${item.notes}', localize: false),
                 ],
               ],
             ),
@@ -128,7 +129,7 @@ class _MovieNightPageState extends State<MovieNightPage> {
         actions: [
           if (_items.isNotEmpty)
             IconButton(
-              tooltip: 'Rimuovi collezione temporanea',
+              tooltip: AppStrings.translate('Rimuovi collezione temporanea'),
               onPressed: () => setState(() {
                 _items = [];
                 _fileName = null;
@@ -200,6 +201,7 @@ class _MovieNightPageState extends State<MovieNightPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(_fileName ?? 'Collezione condivisa',
+                              localize: _fileName == null,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -306,6 +308,7 @@ class _MovieNightPageState extends State<MovieNightPage> {
                                                     size: 18),
                                                 const SizedBox(width: 4),
                                                 Text(item.format,
+                                                    localize: false,
                                                     style: const TextStyle(
                                                         fontSize: 10)),
                                               ],
@@ -322,6 +325,7 @@ class _MovieNightPageState extends State<MovieNightPage> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(item.title,
+                                            localize: false,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
