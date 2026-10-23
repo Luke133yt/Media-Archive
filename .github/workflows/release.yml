@@ -1,0 +1,152 @@
+name: Build and publish release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    name: Desktop (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+            asset: media-archive-windows-setup
+          - os: ubuntu-latest
+            target: linux
+            asset: media-archive-linux-x64
+          - os: macos-latest
+            target: macos
+            asset: media-archive-macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Verify release tag matches pubspec version
+        shell: bash
+        run: |
+          version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | cut -d+ -f1)"
+          tag="${GITHUB_REF_NAME#v}"
+          test "$tag" = "$version" || {
+            echo "Tag $GITHUB_REF_NAME does not match pubspec version $version"
+            exit 1
+          }
+      - name: Install Linux build dependencies
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+      - run: flutter pub get
+      - name: Build Windows installer
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          flutter build windows --release
+          choco install innosetup --no-progress -y
+          $version = (Select-String '^version:' pubspec.yaml).Line.Split(':', 2)[1].Trim().Split('+')[0]
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$version" installer\windows.iss
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item build\release\media-archive-windows-setup.exe dist\
+      - name: Build Linux bundle
+        if: matrix.target == 'linux'
+        run: |
+          flutter build linux --release
+          mkdir -p dist
+          tar -czf dist/media-archive-linux-x64.tar.gz -C build/linux/x64/release bundle
+      - name: Build macOS application
+        if: matrix.target == 'macos'
+        run: |
+          flutter build macos --release
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/media_archive.app dist/media-archive-macos.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 2
+
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Verify release tag matches pubspec version
+        run: |
+          version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | cut -d+ -f1)"
+          test "${GITHUB_REF_NAME#v}" = "$version"
+      - name: Configure Android release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Add the Android signing secrets described in README.md"; exit 1; }
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=upload-keystore.jks\n' \
+            "$ANDROID_STORE_PASSWORD" "$ANDROID_KEY_PASSWORD" "$ANDROID_KEY_ALIAS" \
+            > android/key.properties
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - run: mkdir -p dist && cp build/app/outputs/flutter-apk/app-release.apk dist/media-archive-android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: media-archive-android
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 2
+
+  web:
+    name: Web bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Verify release tag matches pubspec version
+        run: |
+          version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | cut -d+ -f1)"
+          test "${GITHUB_REF_NAME#v}" = "$version"
+      - run: flutter pub get
+      - run: flutter build web --release
+      - run: mkdir -p dist && cd build/web && zip -qr ../../dist/media-archive-web.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: media-archive-web
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 2
+
+  publish:
+    name: Publish GitHub Release
+    needs: [desktop, android, web]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: release-assets/*
+          fail_on_unmatched_files: true
