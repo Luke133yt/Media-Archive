@@ -7,20 +7,32 @@ import '../store.dart';
 String _language(BuildContext context) => context.read<AppState>().appLanguage;
 
 String _translate(String code, String italian,
-    {int? added, int? unmatched, int? duplicates, bool tmdbJson = false}) {
+    {int? added,
+    int? unmatched,
+    int? duplicates,
+    bool tmdbJson = false,
+    bool jsonImport = false}) {
   final lang = code.toLowerCase();
   if (added != null && duplicates != null) {
     return switch (lang) {
-      'en' => tmdbJson
-          ? 'Imported $added titles from TMDB JSON. Skipped $duplicates duplicates.'
-          : unmatched != null
-              ? 'Imported $added titles. $unmatched not matched on TMDB. Skipped $duplicates duplicates.'
-              : 'Imported $added titles without TMDB linking. Skipped $duplicates duplicates.',
-      _ => tmdbJson
-          ? 'Importati $added titoli dal JSON TMDB. Ignorati $duplicates duplicati.'
-          : unmatched != null
-              ? 'Importati $added titoli. $unmatched senza corrispondenza TMDB. Ignorati $duplicates duplicati.'
-              : 'Importati $added titoli senza collegamento TMDB. Ignorati $duplicates duplicati.',
+      'en' => jsonImport
+          ? tmdbJson
+              ? 'Imported $added titles from TMDB JSON.'
+              : 'Imported $added titles from JSON.'
+          : tmdbJson
+              ? 'Imported $added titles from TMDB JSON. Skipped $duplicates duplicates.'
+              : unmatched != null
+                  ? 'Imported $added titles. $unmatched not matched on TMDB. Skipped $duplicates duplicates.'
+                  : 'Imported $added titles without TMDB linking. Skipped $duplicates duplicates.',
+      _ => jsonImport
+          ? tmdbJson
+              ? 'Importati $added titoli dal JSON TMDB.'
+              : 'Importati $added titoli dal file JSON.'
+          : tmdbJson
+              ? 'Importati $added titoli dal JSON TMDB. Ignorati $duplicates duplicati.'
+              : unmatched != null
+                  ? 'Importati $added titoli. $unmatched senza corrispondenza TMDB. Ignorati $duplicates duplicati.'
+                  : 'Importati $added titoli senza collegamento TMDB. Ignorati $duplicates duplicati.',
     };
   }
   if (added != null && unmatched != null) {
@@ -98,7 +110,19 @@ void showAppSnack(BuildContext context, String message) {
   final importSummary = RegExp(
     r'^Importati (\d+) titoli(?: dal JSON TMDB| senza collegamento TMDB)?\.?(?: (\d+) senza corrispondenza TMDB\.)? (\d+) duplicati ignorati\.$',
   ).firstMatch(trimmed);
-  if (importSummary != null) {
+  final jsonSummary =
+      RegExp(r'^Importati (\d+) titoli dal (JSON TMDB|file JSON)\.$')
+          .firstMatch(trimmed);
+  if (jsonSummary != null) {
+    localized = _translate(
+      code,
+      '',
+      added: int.parse(jsonSummary.group(1)!),
+      duplicates: 0,
+      tmdbJson: jsonSummary.group(2) == 'JSON TMDB',
+      jsonImport: true,
+    );
+  } else if (importSummary != null) {
     localized = _translate(
       code,
       '',

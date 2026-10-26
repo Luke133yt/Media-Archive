@@ -168,11 +168,13 @@ class AppState extends ChangeNotifier {
         'items': items.map((e) => e.toJson()).toList(),
       };
 
-  /// Importa un elenco di elementi. Con [replace] sostituisce l'archivio,
-  /// altrimenti unisce evitando duplicati per id TMDB o dati del titolo.
-  /// Restituisce il totale aggiunto e i duplicati ignorati.
+  /// Importa un elenco di elementi. Con [replace] sostituisce l'archivio;
+  /// normalmente l'unione salta duplicati per ID TMDB o dati del titolo.
+  /// [allowDuplicates] conserva invece tutti gli elementi del file importato.
   ImportResult importItems(List<MediaItem> incoming,
-      {List<String> extraFormats = const [], bool replace = false}) {
+      {List<String> extraFormats = const [],
+      bool replace = false,
+      bool allowDuplicates = false}) {
     if (replace) items = [];
     String normalize(String value) {
       var result = value.trim().toLowerCase();
@@ -241,14 +243,20 @@ class AppState extends ChangeNotifier {
     }
     var added = 0;
     var duplicates = 0;
-    for (final i in incoming) {
+    for (final original in incoming) {
+      // Re-importing a backup may repeat its internal UUID. Give that copy a
+      // fresh local ID so both records remain independently editable.
+      final i = allowDuplicates && ids.contains(original.id)
+          ? MediaItem.fromJson(original.toJson()..['id'] = null)
+          : original;
       final incomingKeys = duplicateKeys(i);
       final hasUnspecifiedFormatMatch = titleKeys(i).any((title) =>
           (isUnspecified(i) && byTitle.containsKey(title)) ||
           (byTitle[title]?.any(isUnspecified) ?? false));
-      if (ids.contains(i.id) ||
-          incomingKeys.any(keys.contains) ||
-          hasUnspecifiedFormatMatch) {
+      if (!allowDuplicates &&
+          (ids.contains(i.id) ||
+              incomingKeys.any(keys.contains) ||
+              hasUnspecifiedFormatMatch)) {
         duplicates++;
         continue;
       }

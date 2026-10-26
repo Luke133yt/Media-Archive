@@ -236,10 +236,14 @@ class _SettingsPageState extends State<SettingsPage> {
             ...parsed.formats.map((f) => formatMap[f.toLowerCase()] ?? f),
             ...formatMap.values,
           }.toList(),
-          replace: mode == 'replace');
+          replace: mode == 'replace',
+          allowDuplicates:
+              picked.$1.toLowerCase().endsWith('.json') || parsed.isTmdbJson);
       if (mounted) setState(() => _unmatched = unmatched);
-      final summary = parsed.isTmdbJson
-          ? 'Importati ${importResult.added} titoli dal JSON TMDB. ${importResult.duplicates} duplicati ignorati.'
+      final isJsonImport =
+          picked.$1.toLowerCase().endsWith('.json') || parsed.isTmdbJson;
+      final summary = isJsonImport
+          ? 'Importati ${importResult.added} titoli dal ${parsed.isTmdbJson ? 'JSON TMDB' : 'file JSON'}.'
           : searchTmdb
               ? 'Importati ${importResult.added} titoli. ${unmatched.length} senza corrispondenza TMDB. ${importResult.duplicates} duplicati ignorati.'
               : 'Importati ${importResult.added} titoli senza collegamento TMDB. ${importResult.duplicates} duplicati ignorati.';
