@@ -114,58 +114,70 @@ class _SettingsPageState extends State<SettingsPage> {
         _snack('Nessun titolo trovato nel file.');
         return;
       }
-      final mode = await showDialog<String>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text('Importare ${parsed.items.length} titoli?'),
-          content: Text('Origine rilevata: ${parsed.source}.\n\n'
-              'Puoi unirli alla collezione attuale (i duplicati vengono saltati) '
-              'oppure sostituirla del tutto.'),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Annulla')),
-            OutlinedButton(
-                onPressed: () => Navigator.pop(ctx, 'replace'),
-                child: const Text('Sostituisci')),
-            FilledButton(
-                onPressed: () => Navigator.pop(ctx, 'merge'),
-                child: const Text('Unisci')),
-          ],
-        ),
-      );
+      final mode = parsed.isTmdbJson
+          ? 'merge'
+          : await showDialog<String>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text('Importare ${parsed.items.length} titoli?'),
+                content: Text('Origine rilevata: ${parsed.source}.\n\n'
+                    'Puoi unirli alla collezione attuale (i duplicati vengono saltati) '
+                    'oppure sostituirla del tutto.'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Annulla')),
+                  OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, 'replace'),
+                      child: const Text('Sostituisci')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(ctx, 'merge'),
+                      child: const Text('Unisci')),
+                ],
+              ),
+            );
       if (mode == null) return;
-      final searchTmdb = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Collegare i titoli a TMDB?'),
-          content: const Text(
-              'Puoi cercare i corrispondenti su TMDB e importare i dati arricchiti, oppure importare direttamente i dati del file senza cercare corrispondenze.'),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Annulla')),
-            OutlinedButton.icon(
-                onPressed: () => Navigator.pop(ctx, false),
-                icon: const Icon(Icons.file_download_outlined),
-                label: const Text('Importa senza TMDB')),
-            FilledButton.icon(
-                onPressed: () => Navigator.pop(ctx, true),
-                icon: const Icon(Icons.search),
-                label: const Text('Cerca su TMDB')),
-          ],
-        ),
-      );
+      final searchTmdb = parsed.isNativeBackup || parsed.isTmdbJson
+          ? false
+          : await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Collegare i titoli a TMDB?'),
+                content: const Text(
+                    'Puoi cercare i corrispondenti su TMDB e importare i dati arricchiti, oppure importare direttamente i dati del file senza cercare corrispondenze.'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Annulla')),
+                  OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      icon: const Icon(Icons.file_download_outlined),
+                      label: const Text('Importa senza TMDB')),
+                  FilledButton.icon(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      icon: const Icon(Icons.search),
+                      label: const Text('Cerca su TMDB')),
+                ],
+              ),
+            );
       if (searchTmdb == null) return;
       if (searchTmdb && s.tmdb == null) {
         _snack(
             'Configura prima la chiave TMDB oppure scegli l’import senza TMDB.');
         return;
       }
-      final formatMap = await _resolveImportedFormats(parsed.items, s.formats);
+      final formatMap = parsed.isNativeBackup
+          ? {
+              for (final format in {
+                ...parsed.formats,
+                ...parsed.items.map((item) => item.format),
+              })
+                format.toLowerCase(): format,
+            }
+          : await _resolveImportedFormats(parsed.items, s.formats);
       if (formatMap == null) return;
       for (final item in parsed.items) {
-        item.format = formatMap[item.format] ?? item.format;
+        item.format = formatMap[item.format.toLowerCase()] ?? item.format;
       }
       final tmdb = s.tmdb;
       final matched = <MediaItem>[];
@@ -219,15 +231,19 @@ class _SettingsPageState extends State<SettingsPage> {
         if (mounted) setState(() => _matching = false);
       }
       final toImport = searchTmdb ? matched : parsed.items;
-      final added = s.importItems(toImport,
-          extraFormats: parsed.formats
-              .map((f) => formatMap[f.toLowerCase()] ?? f)
-              .toList(),
+      final importResult = s.importItems(toImport,
+          extraFormats: {
+            ...parsed.formats.map((f) => formatMap[f.toLowerCase()] ?? f),
+            ...formatMap.values,
+          }.toList(),
           replace: mode == 'replace');
       if (mounted) setState(() => _unmatched = unmatched);
-      _snack(searchTmdb
-          ? 'Importati $added titoli. ${unmatched.length} senza corrispondenza TMDB.'
-          : 'Importati $added titoli senza collegamento TMDB.');
+      final summary = parsed.isTmdbJson
+          ? 'Importati ${importResult.added} titoli dal JSON TMDB. ${importResult.duplicates} duplicati ignorati.'
+          : searchTmdb
+              ? 'Importati ${importResult.added} titoli. ${unmatched.length} senza corrispondenza TMDB. ${importResult.duplicates} duplicati ignorati.'
+              : 'Importati ${importResult.added} titoli senza collegamento TMDB. ${importResult.duplicates} duplicati ignorati.';
+      _snack(summary);
     } catch (e) {
       _snack('Import non riuscito: $e');
     }
@@ -272,6 +288,7 @@ class _SettingsPageState extends State<SettingsPage> {
         continue;
       }
       final guessed = _guessFormat(raw, choices);
+      final formatChoices = {...choices, raw}.toList();
       final selected = await showDialog<String>(
         context: context,
         builder: (ctx) {
@@ -288,18 +305,21 @@ class _SettingsPageState extends State<SettingsPage> {
                         'Nel file il formato "$raw" compare ${items.where((i) => i.format.trim().toLowerCase() == key).length} volte.'),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      value: value,
+                      initialValue: value,
                       isExpanded: true,
-                      items: choices
-                          .map(
-                              (f) => DropdownMenuItem(value: f, child: Text(f)))
+                      items: formatChoices
+                          .map((f) => DropdownMenuItem(
+                                value: f,
+                                child: Text(f == raw
+                                    ? '$f (nuovo formato dal file)'
+                                    : f),
+                              ))
                           .toList(),
                       onChanged: (v) {
                         if (v != null) setDlg(() => value = v);
                       },
-                      decoration:
-                          InputDecoration(
-                              labelText: AppStrings.translate('Formato nell’app')),
+                      decoration: InputDecoration(
+                          labelText: AppStrings.translate('Formato nell’app')),
                     ),
                   ]),
               actions: [
@@ -361,6 +381,90 @@ class _SettingsPageState extends State<SettingsPage> {
     final ok = await IoService.saveText(
         'film_non_trovati_tmdb', 'csv', IoService.toCsv(_unmatched));
     if (ok) _snack('Elenco dei non trovati salvato');
+  }
+
+  Future<void> _importUnmatchedAsIs(MediaItem source, int index) async {
+    final state = context.read<AppState>();
+    final seenFormats = <String>{};
+    final formats = <String>[
+      ...defaultFormats,
+      ...state.formats,
+      source.format,
+    ].where((format) => seenFormats.add(format.toLowerCase())).toList();
+    var selected = formats.firstWhere(
+      (format) => format.toLowerCase() == source.format.toLowerCase(),
+      orElse: () => 'Non Specificato',
+    );
+    final newFormat = TextEditingController();
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialog) => AlertDialog(
+          title: const Text('Importa senza TMDB'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(source.title, localize: false),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: selected,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: AppStrings.translate('Supporto'),
+                ),
+                items: formats
+                    .map((format) => DropdownMenuItem(
+                          value: format,
+                          child: Text(format, localize: false),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) setDialog(() => selected = value);
+                },
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: newFormat,
+                decoration: InputDecoration(
+                  labelText: AppStrings.translate('Nuovo formato facoltativo'),
+                  hintText: AppStrings.translate('es. DIVX'),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(
+                ctx,
+                newFormat.text.trim().isEmpty
+                    ? selected
+                    : newFormat.text.trim(),
+              ),
+              child: const Text('Aggiungi'),
+            ),
+          ],
+        ),
+      ),
+    );
+    newFormat.dispose();
+    if (chosen == null) return;
+
+    final importedData = source.toJson()..['id'] = null;
+    final item = MediaItem.fromJson(importedData)..format = chosen;
+    final result = state.importItems([item]);
+    if (mounted) {
+      setState(() {
+        if (index < _unmatched.length) _unmatched.removeAt(index);
+      });
+      _snack(result.added == 0
+          ? 'Questo titolo è già presente nella collezione.'
+          : 'Titolo importato senza TMDB');
+    }
   }
 
   Future<void> _searchUnmatched(MediaItem source, int index) async {
@@ -504,8 +608,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 initialValue:
                     _langs.containsKey(s.tmdbLang) ? s.tmdbLang : 'en-US',
                 decoration: InputDecoration(
-                    labelText:
-                        AppStrings.translate('Lingua dei dati TMDB')),
+                    labelText: AppStrings.translate('Lingua dei dati TMDB')),
                 items: [
                   for (final e in _langs.entries)
                     DropdownMenuItem(value: e.key, child: Text(e.value)),
@@ -589,13 +692,27 @@ class _SettingsPageState extends State<SettingsPage> {
                 for (var i = 0; i < _unmatched.length; i++)
                   ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(_unmatched[i].title),
+                      title: Text(_unmatched[i].title, localize: false),
                       subtitle: Text(
-                          '${_unmatched[i].year ?? 'Anno sconosciuto'} · ${_unmatched[i].format}'),
-                      trailing: IconButton(
-                          tooltip: AppStrings.translate('Cerca su TMDB'),
-                          icon: const Icon(Icons.search),
-                          onPressed: () => _searchUnmatched(_unmatched[i], i))),
+                        '${_unmatched[i].year ?? AppStrings.translate('Anno sconosciuto')} · ${_unmatched[i].format}',
+                        localize: false,
+                      ),
+                      trailing: Wrap(
+                        spacing: 0,
+                        children: [
+                          IconButton(
+                            tooltip: AppStrings.translate('Cerca su TMDB'),
+                            icon: const Icon(Icons.search),
+                            onPressed: () => _searchUnmatched(_unmatched[i], i),
+                          ),
+                          IconButton(
+                            tooltip: AppStrings.translate('Importa così com’è'),
+                            icon: const Icon(Icons.playlist_add),
+                            onPressed: () =>
+                                _importUnmatchedAsIs(_unmatched[i], i),
+                          ),
+                        ],
+                      )),
               ])),
         ],
         const SizedBox(height: 16),

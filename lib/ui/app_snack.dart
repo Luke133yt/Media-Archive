@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart' hide Text;
-import '../localization.dart' show Text;
+import '../localization.dart' show AppStrings, Text;
 import 'package:provider/provider.dart';
 
 import '../store.dart';
 
-String _language(BuildContext context) =>
-    context.read<AppState>().appLanguage;
+String _language(BuildContext context) => context.read<AppState>().appLanguage;
 
-String _translate(String code, String italian, {int? added, int? unmatched}) {
+String _translate(String code, String italian,
+    {int? added, int? unmatched, int? duplicates, bool tmdbJson = false}) {
   final lang = code.toLowerCase();
+  if (added != null && duplicates != null) {
+    return switch (lang) {
+      'en' => tmdbJson
+          ? 'Imported $added titles from TMDB JSON. Skipped $duplicates duplicates.'
+          : unmatched != null
+              ? 'Imported $added titles. $unmatched not matched on TMDB. Skipped $duplicates duplicates.'
+              : 'Imported $added titles without TMDB linking. Skipped $duplicates duplicates.',
+      _ => tmdbJson
+          ? 'Importati $added titoli dal JSON TMDB. Ignorati $duplicates duplicati.'
+          : unmatched != null
+              ? 'Importati $added titoli. $unmatched senza corrispondenza TMDB. Ignorati $duplicates duplicati.'
+              : 'Importati $added titoli senza collegamento TMDB. Ignorati $duplicates duplicati.',
+    };
+  }
   if (added != null && unmatched != null) {
     return switch (lang) {
       'en' => 'Imported $added titles. $unmatched not matched on TMDB.',
@@ -71,7 +85,8 @@ String _translate(String code, String italian, {int? added, int? unmatched}) {
       'ja': '完了しました。',
     },
   };
-  return messages[italian]?[lang] ?? italian;
+  return messages[italian]?[lang] ??
+      (lang == 'en' ? AppStrings.translate(italian) : italian);
 }
 
 void showAppSnack(BuildContext context, String message) {
@@ -80,18 +95,20 @@ void showAppSnack(BuildContext context, String message) {
       ? _translate(_language(context), 'Operazione completata')
       : trimmed;
   final code = _language(context);
-  final tmdbImport =
-      RegExp(r'^Importati (\d+) titoli\. (\d+) senza corrispondenza TMDB\.$')
-          .firstMatch(trimmed);
-  final rawImport =
-      RegExp(r'^Importati (\d+) titoli senza collegamento TMDB\.$')
-          .firstMatch(trimmed);
-  if (tmdbImport != null) {
-    localized = _translate(code, '',
-        added: int.parse(tmdbImport.group(1)!),
-        unmatched: int.parse(tmdbImport.group(2)!));
-  } else if (rawImport != null) {
-    localized = _translate(code, '', added: int.parse(rawImport.group(1)!));
+  final importSummary = RegExp(
+    r'^Importati (\d+) titoli(?: dal JSON TMDB| senza collegamento TMDB)?\.?(?: (\d+) senza corrispondenza TMDB\.)? (\d+) duplicati ignorati\.$',
+  ).firstMatch(trimmed);
+  if (importSummary != null) {
+    localized = _translate(
+      code,
+      '',
+      added: int.parse(importSummary.group(1)!),
+      unmatched: importSummary.group(2) == null
+          ? null
+          : int.parse(importSummary.group(2)!),
+      duplicates: int.parse(importSummary.group(3)!),
+      tmdbJson: trimmed.contains('dal JSON TMDB'),
+    );
   } else if (trimmed.isNotEmpty) {
     localized = _translate(code, trimmed);
   }

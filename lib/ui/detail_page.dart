@@ -143,8 +143,8 @@ class _DetailPageState extends State<DetailPage> {
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => runSearch(),
                     decoration: InputDecoration(
-                      labelText: AppStrings.translate(
-                          'Titolo del film o della serie'),
+                      labelText:
+                          AppStrings.translate('Titolo del film o della serie'),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.search),
                         onPressed: runSearch,
@@ -275,8 +275,8 @@ class _DetailPageState extends State<DetailPage> {
               ),
               TextField(
                 controller: notes,
-                decoration: InputDecoration(
-                    labelText: AppStrings.translate('Note')),
+                decoration:
+                    InputDecoration(labelText: AppStrings.translate('Note')),
               ),
             ]),
           ),
@@ -304,7 +304,8 @@ class _DetailPageState extends State<DetailPage> {
       ),
     );
     if (res != null) {
-      context.read<AppState>().upsert(m.clone()..loan = res);
+      await context.read<AppState>().saveLoan(m.id, res);
+      if (mounted) _snack('Prestito e promemoria salvati');
     }
   }
 

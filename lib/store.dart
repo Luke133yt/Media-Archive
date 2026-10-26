@@ -9,6 +9,13 @@ import 'localization.dart';
 import 'models.dart';
 import 'tmdb.dart';
 
+class ImportResult {
+  final int added;
+  final int duplicates;
+
+  const ImportResult({required this.added, required this.duplicates});
+}
+
 class AppState extends ChangeNotifier {
   List<MediaItem> items = [];
   List<String> formats = List.of(defaultFormats);
@@ -100,6 +107,14 @@ class AppState extends ChangeNotifier {
     _commit();
   }
 
+  Future<void> saveLoan(String id, LoanInfo? loan) async {
+    final index = items.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+    items[index] = items[index].clone()..loan = loan;
+    notifyListeners();
+    await _save();
+  }
+
   void remove(String id) {
     items.removeWhere((e) => e.id == id);
     _commit();
@@ -154,21 +169,95 @@ class AppState extends ChangeNotifier {
       };
 
   /// Importa un elenco di elementi. Con [replace] sostituisce l'archivio,
-  /// altrimenti unisce evitando duplicati (stesso id, oppure stesso
-  /// titolo + anno + formato). Restituisce il numero di elementi aggiunti.
-  int importItems(List<MediaItem> incoming,
+  /// altrimenti unisce evitando duplicati per id TMDB o dati del titolo.
+  /// Restituisce il totale aggiunto e i duplicati ignorati.
+  ImportResult importItems(List<MediaItem> incoming,
       {List<String> extraFormats = const [], bool replace = false}) {
     if (replace) items = [];
-    String key(MediaItem i) =>
-        '${i.title.toLowerCase()}|${i.year ?? ''}|${i.format.toLowerCase()}';
-    final ids = items.map((e) => e.id).toSet();
-    final keys = items.map(key).toSet();
+    String normalize(String value) {
+      var result = value.trim().toLowerCase();
+      const accents = {
+        'à': 'a',
+        'á': 'a',
+        'â': 'a',
+        'ä': 'a',
+        'ã': 'a',
+        'å': 'a',
+        'è': 'e',
+        'é': 'e',
+        'ê': 'e',
+        'ë': 'e',
+        'ì': 'i',
+        'í': 'i',
+        'î': 'i',
+        'ï': 'i',
+        'ò': 'o',
+        'ó': 'o',
+        'ô': 'o',
+        'ö': 'o',
+        'õ': 'o',
+        'ù': 'u',
+        'ú': 'u',
+        'û': 'u',
+        'ü': 'u',
+        'ç': 'c',
+        'ñ': 'n',
+      };
+      for (final entry in accents.entries) {
+        result = result.replaceAll(entry.key, entry.value);
+      }
+      return String.fromCharCodes(result.runes.where((rune) =>
+          rune > 127 ||
+          (rune >= 48 && rune <= 57) ||
+          (rune >= 97 && rune <= 122)));
+    }
+
+    Set<String> titleKeys(MediaItem item) {
+      final year = item.year?.toString() ?? '';
+      final keys = <String>{};
+      for (final title in {item.title, item.originalTitle}) {
+        final normalizedTitle = normalize(title);
+        if (normalizedTitle.isEmpty) continue;
+        keys.add('title:${item.type}:$normalizedTitle|$year');
+      }
+      return keys;
+    }
+
+    String formatKey(MediaItem item) => normalize(item.format);
+    bool isUnspecified(MediaItem item) =>
+        formatKey(item) == normalize('Non Specificato');
+    Set<String> duplicateKeys(MediaItem item) => {
+          if (item.tmdbId != null) 'tmdb:${item.type}:${item.tmdbId}',
+          for (final title in titleKeys(item)) '$title|${formatKey(item)}',
+        };
+
+    final ids = items.map((item) => item.id).toSet();
+    final keys = <String>{for (final item in items) ...duplicateKeys(item)};
+    final byTitle = <String, List<MediaItem>>{};
+    for (final item in items) {
+      for (final title in titleKeys(item)) {
+        byTitle.putIfAbsent(title, () => []).add(item);
+      }
+    }
     var added = 0;
+    var duplicates = 0;
     for (final i in incoming) {
-      if (ids.contains(i.id) || keys.contains(key(i))) continue;
+      final incomingKeys = duplicateKeys(i);
+      final hasUnspecifiedFormatMatch = titleKeys(i).any((title) =>
+          (isUnspecified(i) && byTitle.containsKey(title)) ||
+          (byTitle[title]?.any(isUnspecified) ?? false));
+      if (ids.contains(i.id) ||
+          incomingKeys.any(keys.contains) ||
+          hasUnspecifiedFormatMatch) {
+        duplicates++;
+        continue;
+      }
       items.add(i);
       ids.add(i.id);
-      keys.add(key(i));
+      keys.addAll(incomingKeys);
+      for (final title in titleKeys(i)) {
+        byTitle.putIfAbsent(title, () => []).add(i);
+      }
       _ensureFormat(i.format);
       added++;
     }
@@ -176,7 +265,7 @@ class AppState extends ChangeNotifier {
       _ensureFormat(f);
     }
     _commit();
-    return added;
+    return ImportResult(added: added, duplicates: duplicates);
   }
 
   void clearAll() {
