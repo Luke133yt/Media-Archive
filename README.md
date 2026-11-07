@@ -32,7 +32,7 @@ These screenshots show the app with sample data. Avoid adding personal notes, ba
 - Track physical formats such as DVD, Blu-ray, VHS, LaserDisc, HD-DVD, CED and custom formats.
 - Save region, language, price, barcode, notes, personal review and half-star rating; rate physical copy quality with half-disc steps.
 - Mark a title as watched, archived on your server, or **Lost Media**. Search and filter the collection, including a Lost Media filter.
-- Track loans, borrowers and return dates.
+- Track loans, borrowers and return dates, with home page reminders for upcoming and overdue returns.
 - **Movie Night:** import a friend's CSV into a temporary, searchable collection. It is kept separate from your own library and is not saved after leaving the session.
 - Import and export CSV; import JSON/CSV/XML, including Filmotech files; create a full JSON backup.
 - Choose the light or dark theme, reduce animated background effects, and check GitHub for new releases.

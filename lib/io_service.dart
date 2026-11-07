@@ -14,7 +14,11 @@ class ParsedImport {
   final List<MediaItem> items;
   final List<String> formats;
   final String source;
-  ParsedImport(this.items, this.formats, this.source);
+  final bool isNativeBackup;
+  final bool isTmdbJson;
+
+  ParsedImport(this.items, this.formats, this.source,
+      {this.isNativeBackup = false, this.isTmdbJson = false});
 }
 
 class IoService {
@@ -162,14 +166,54 @@ class IoService {
   static ParsedImport _parseJson(String content) {
     final data = jsonDecode(content);
     if (data is Map && data['items'] is List) {
+      final records = (data['items'] as List).whereType<Map>().toList();
+      if (records.isNotEmpty && records.every(_looksLikeTmdbRecord)) {
+        return ParsedImport(
+          records.map(_fromTmdbRecord).toList(),
+          const ['Non Specificato'],
+          'TMDB JSON',
+          isTmdbJson: true,
+        );
+      }
       final items = (data['items'] as List)
           .map((e) => MediaItem.fromJson(Map<String, dynamic>.from(e)))
           .toList();
       final formats =
           ((data['formats'] ?? []) as List).map((e) => e.toString()).toList();
-      return ParsedImport(items, formats, 'Backup Media Archive');
+      return ParsedImport(items, formats, 'Backup Media Archive',
+          isNativeBackup: data['app'] == 'media_archive');
+    }
+    if (data is Map && data['results'] is List) {
+      final records = (data['results'] as List).whereType<Map>().toList();
+      if (records.isNotEmpty && records.every(_looksLikeTmdbRecord)) {
+        return ParsedImport(
+          records.map(_fromTmdbRecord).toList(),
+          const ['Non Specificato'],
+          'TMDB JSON',
+          isTmdbJson: true,
+        );
+      }
+    }
+    if (data is Map && _looksLikeTmdbRecord(data)) {
+      return ParsedImport(
+        [_fromTmdbRecord(data)],
+        const ['Non Specificato'],
+        'TMDB JSON',
+        isTmdbJson: true,
+      );
     }
     if (data is List) {
+      final tmdbRecords = data.whereType<Map>().toList();
+      if (tmdbRecords.isNotEmpty &&
+          tmdbRecords.length == data.length &&
+          tmdbRecords.every(_looksLikeTmdbRecord)) {
+        return ParsedImport(
+          tmdbRecords.map(_fromTmdbRecord).toList(),
+          const ['Non Specificato'],
+          'TMDB JSON',
+          isTmdbJson: true,
+        );
+      }
       final items = data.whereType<Map>().map((e) {
         final m = Map<String, dynamic>.from(e);
         if (m.containsKey('title') && m.containsKey('format')) {
@@ -180,6 +224,79 @@ class IoService {
       return ParsedImport(items, [], 'JSON');
     }
     throw const FormatException('Formato JSON non riconosciuto');
+  }
+
+  static bool _looksLikeTmdbRecord(Map<dynamic, dynamic> record) {
+    final id = int.tryParse((record['id'] ?? '').toString());
+    final mediaType =
+        (record['media_type'] ?? record['type'] ?? '').toString().toLowerCase();
+    if (mediaType.isNotEmpty && mediaType != 'movie' && mediaType != 'tv') {
+      return false;
+    }
+    final hasTitle =
+        (record['title'] ?? record['name'] ?? '').toString().trim().isNotEmpty;
+    final hasTmdbFields = record.containsKey('poster_path') ||
+        record.containsKey('media_type') ||
+        record.containsKey('release_date') ||
+        record.containsKey('first_air_date') ||
+        record.containsKey('vote_average');
+    return id != null && hasTitle && hasTmdbFields;
+  }
+
+  static MediaItem _fromTmdbRecord(Map<dynamic, dynamic> raw) {
+    final record = Map<String, dynamic>.from(raw);
+    final typeValue =
+        (record['media_type'] ?? record['type'] ?? '').toString().toLowerCase();
+    final tv = typeValue == 'tv' ||
+        (typeValue.isEmpty && record['first_air_date'] != null);
+    final genreData = record['genres'] ?? record['genre_ids'] ?? const [];
+    final genres = genreData is List
+        ? genreData
+            .map((genre) => genre is Map
+                ? (genre['name'] ?? '').toString()
+                : genre is String
+                    ? genre
+                    : '')
+            .where((genre) => genre.isNotEmpty)
+            .toList()
+        : <String>[];
+    final credits = record['credits'];
+    final castData = credits is Map ? credits['cast'] : null;
+    final cast = castData is List
+        ? castData
+            .whereType<Map>()
+            .map((person) => CastMember(
+                  id: int.tryParse((person['id'] ?? '').toString()),
+                  name: (person['name'] ?? '').toString(),
+                  character: (person['character'] ?? '').toString(),
+                  profilePath: person['profile_path']?.toString(),
+                ))
+            .toList()
+        : <CastMember>[];
+    final date =
+        (tv ? record['first_air_date'] : record['release_date'])?.toString() ??
+            '';
+    final year = RegExp(r'^(\d{4})').firstMatch(date)?.group(1);
+
+    return MediaItem(
+      tmdbId: int.tryParse((record['id'] ?? '').toString()),
+      type: tv ? 'tv' : 'movie',
+      title: (record['title'] ?? record['name'] ?? '').toString(),
+      originalTitle: (record['original_title'] ?? record['original_name'] ?? '')
+          .toString(),
+      year: year == null ? null : int.tryParse(year),
+      overview: (record['overview'] ?? '').toString(),
+      posterPath: record['poster_path']?.toString(),
+      backdropPath: record['backdrop_path']?.toString(),
+      genres: genres,
+      runtime: int.tryParse((record['runtime'] ?? '').toString()),
+      voteAverage: (record['vote_average'] as num?)?.toDouble(),
+      budget: (record['budget'] as num?)?.toInt(),
+      revenue: (record['revenue'] as num?)?.toInt(),
+      seasons: (record['number_of_seasons'] as num?)?.toInt(),
+      cast: cast,
+      format: 'Non Specificato',
+    );
   }
 
   static List<MediaItem> _parseCsv(String content) {

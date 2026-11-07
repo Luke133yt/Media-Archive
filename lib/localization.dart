@@ -27,6 +27,7 @@ class AppStrings {
     'Titolo': 'Title',
     'Titolo originale': 'Original title',
     'Anno': 'Year',
+    'Anno sconosciuto': 'Unknown year',
     'Regia': 'Director',
     'Trama': 'Overview',
     'Locandina': 'Poster',
@@ -64,8 +65,7 @@ class AppStrings {
     'Non archiviati': 'Not archived',
     'La tua collezione è vuota.\nPremi + per aggiungere il primo titolo.':
         'Your collection is empty.\nPress + to add your first title.',
-    'Nessun risultato con questi filtri.':
-        'No results match these filters.',
+    'Nessun risultato con questi filtri.': 'No results match these filters.',
     'Inserisci un titolo': 'Enter a title',
     'Scansiona il codice a barre': 'Scan barcode',
     'OK': 'OK',
@@ -76,8 +76,7 @@ class AppStrings {
     'Nessun risultato trovato': 'No results found',
     'Sostituisci': 'Replace',
     'Unisci': 'Merge',
-    'Nessun titolo corrisponde alla ricerca.':
-        'No titles match your search.',
+    'Nessun titolo corrisponde alla ricerca.': 'No titles match your search.',
     'In casa. Nessun prestito attivo.': 'At home. No active loan.',
     'Crea un account gratuito su themoviedb.org → Impostazioni → API, '
             'poi incolla qui la "API Key" oppure il "Read Access Token".':
@@ -109,6 +108,13 @@ class AppStrings {
     'Importa file': 'Import file',
     'Formati dei media': 'Media formats',
     'Nuovo formato': 'New format',
+    'Nuovo formato facoltativo': 'New format (optional)',
+    'Importa così com’è': 'Import as-is',
+    'es. DIVX': 'e.g. DIVX',
+    'Titolo importato senza TMDB': 'Title imported without TMDB',
+    'Questo titolo è già presente nella collezione.':
+        'This title is already in your collection.',
+    'Prestito e promemoria salvati': 'Loan and reminder saved',
     'es. CED, Video CD, UMD…': 'e.g. CED, Video CD, UMD…',
     'Ripristina formati predefiniti': 'Restore default formats',
     'Zona pericolosa': 'Danger zone',
@@ -133,6 +139,7 @@ class AppStrings {
     'Rimuovere dalla collezione?': 'Remove from collection?',
     'Trade — prestito': 'Loan',
     'Prestato a': 'Loaned to',
+    'Promemoria prestiti': 'Loan reminders',
     'Dal': 'From',
     'Svuotare tutto l\'archivio?': 'Clear the entire archive?',
     'Da restituire entro (facoltativo)': 'Return by (optional)',
@@ -181,8 +188,18 @@ class AppStrings {
     if (director != null) return 'Director: ${director.group(1)}';
     final notes = RegExp(r'^Note: (.*)$').firstMatch(value);
     if (notes != null) return 'Notes: ${notes.group(1)}';
+    final loanReminder =
+        RegExp(r'^Prestato a (.*) · Rientro il (.*)$').firstMatch(value);
+    if (loanReminder != null) {
+      return 'Loaned to ${loanReminder.group(1)} · Due on ${loanReminder.group(2)}';
+    }
     final borrower = RegExp(r'^Prestato a (.*)$').firstMatch(value);
     if (borrower != null) return 'Loaned to ${borrower.group(1)}';
+    final moreReminders =
+        RegExp(r'^\+ (\d+) altri in scadenza$').firstMatch(value);
+    if (moreReminders != null) {
+      return '+ ${moreReminders.group(1)} more due soon';
+    }
     final since = RegExp(r'^Dal (.*)$').firstMatch(value);
     if (since != null) return 'Since ${since.group(1)}';
     final returnBy = RegExp(r'^Da restituire entro il (.*)$').firstMatch(value);
@@ -206,21 +223,31 @@ class AppStrings {
     if (died != null) return 'Died ${died.group(1)}';
     final tmdbVote = RegExp(r'^([\d.]+) TMDB$').firstMatch(value);
     if (tmdbVote != null) return '${tmdbVote.group(1)} TMDB';
-    final emptySearch = RegExp(r'^Nessun risultato per “(.*)”\.$').firstMatch(value);
+    final emptySearch =
+        RegExp(r'^Nessun risultato per “(.*)”\.$').firstMatch(value);
     if (emptySearch != null) return 'No results for “${emptySearch.group(1)}”.';
-    final importError = RegExp(r'^Import non riuscito: (.*)$').firstMatch(value);
+    final importError =
+        RegExp(r'^Import non riuscito: (.*)$').firstMatch(value);
     if (importError != null) return 'Import failed: ${importError.group(1)}';
-    final movieNightCount = RegExp(r'^(\d+) di (\d+) titoli$').firstMatch(value);
+    final newFormat =
+        RegExp(r'^(.*) \(nuovo formato dal file\)$').firstMatch(value);
+    if (newFormat != null) {
+      return '${newFormat.group(1)} (new format from file)';
+    }
+    final movieNightCount =
+        RegExp(r'^(\d+) di (\d+) titoli$').firstMatch(value);
     if (movieNightCount != null) {
       return '${movieNightCount.group(1)} of ${movieNightCount.group(2)} titles';
     }
-    final castCount = RegExp(r'^(\d+) film · (\d+) serie TV$').firstMatch(value);
+    final castCount =
+        RegExp(r'^(\d+) film · (\d+) serie TV$').firstMatch(value);
     if (castCount != null) {
       return '${castCount.group(1)} films · ${castCount.group(2)} TV shows';
     }
     final shown = RegExp(r'^• (\d+) mostrati$').firstMatch(value);
     if (shown != null) return '• ${shown.group(1)} shown';
-    final unmatched = RegExp(r'^Non trovati su TMDB \((\d+)\)$').firstMatch(value);
+    final unmatched =
+        RegExp(r'^Non trovati su TMDB \((\d+)\)$').firstMatch(value);
     if (unmatched != null) return 'Not found on TMDB (${unmatched.group(1)})';
     final search = RegExp(r'^Cerca “(.+)” su TMDB$').firstMatch(value);
     if (search != null) return 'Search TMDB for “${search.group(1)}”';

@@ -18,12 +18,6 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> {
   int _index = 0;
 
-  static const _pages = <Widget>[
-    LibraryPage(),
-    SettingsPage(),
-    MovieNightPage(),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -38,7 +32,14 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 800;
-    final body = IndexedStack(index: _index, children: _pages);
+    final body = IndexedStack(
+      index: _index,
+      children: [
+        LibraryPage(isActive: _index == 0),
+        const SettingsPage(),
+        const MovieNightPage(),
+      ],
+    );
 
     if (wide) {
       return Scaffold(
