@@ -1,0 +1,14 @@
+{
+  "name": "media-archive-stremio-addon",
+  "version": "1.13.0",
+  "private": true,
+  "description": "Stremio/Nuvio addon for Media Archive physical collections",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

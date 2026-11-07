@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models.dart';
 import '../store.dart';
 import 'glass.dart';
+import 'tmdb_info_page.dart';
 
 class PersonPage extends StatefulWidget {
   final CastMember person;
@@ -192,9 +193,24 @@ class _PersonPageState extends State<PersonPage> {
                           ].join(' · ')),
                           trailing: credit.voteAverage == null ||
                                   credit.voteAverage == 0
-                              ? null
-                              : Text(
-                                  '★ ${credit.voteAverage!.toStringAsFixed(1)}'),
+                              ? const Icon(Icons.chevron_right)
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                        '★ ${credit.voteAverage!.toStringAsFixed(1)}'),
+                                    const Icon(Icons.chevron_right),
+                                  ],
+                                ),
+                          onTap: () {
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => TmdbInfoPage(
+                                tmdbId: credit.id,
+                                type: credit.type,
+                                fallbackTitle: credit.title,
+                              ),
+                            ));
+                          },
                         ),
                     ],
                   ),

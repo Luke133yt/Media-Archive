@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide Text;
+import 'package:flutter/services.dart';
 import '../localization.dart' show AppStrings, Text;
 import 'app_snack.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../formats.dart';
 import '../io_service.dart';
 import '../models.dart';
+import '../nuvio_addon.dart';
 import '../store.dart';
 import '../tmdb.dart';
 import '../update_service.dart';
@@ -28,6 +30,8 @@ class _SettingsPageState extends State<SettingsPage> {
   List<MediaItem> _unmatched = [];
   bool _matching = false;
   bool _checkingUpdates = false;
+  bool _nuvioBusy = false;
+  String? _nuvioManifest;
 
   static const _langs = {
     'it-IT': 'Italiano',
@@ -95,6 +99,79 @@ class _SettingsPageState extends State<SettingsPage> {
     final ok = await IoService.saveText(
         'media_archive_backup', 'json', IoService.toJson(s.exportMap()));
     if (ok) _snack('Backup salvato');
+  }
+
+  Future<void> _uploadToNuvio() async {
+    final s = context.read<AppState>();
+    if (s.items.isEmpty) {
+      _snack('La collezione è vuota.');
+      return;
+    }
+    setState(() => _nuvioBusy = true);
+    try {
+      final ok = await IoService.saveText(
+          'media_archive_nuvio', 'json', IoService.toJson(s.exportMap()));
+      if (ok) {
+        _snack(
+            'Backup pronto per Nuvio. Caricalo su Drive o nell’addon, oppure avvia il server locale.');
+      }
+      try {
+        final url = await NuvioAddonServer.instance.start(() => s.items);
+        if (mounted) setState(() => _nuvioManifest = url);
+        await Clipboard.setData(ClipboardData(text: url));
+        final stremio = url.replaceFirst(RegExp(r'^https?://'), 'stremio://');
+        await launchUrl(Uri.parse(stremio),
+            mode: LaunchMode.externalApplication);
+        _snack('Manifest copiato. Su Nuvio: Addons → incolla l’URL.');
+      } on UnsupportedError catch (e) {
+        _snack(e.message ?? e.toString());
+      }
+    } catch (e) {
+      _snack('Upload to Nuvio non riuscito: $e');
+    } finally {
+      if (mounted) setState(() => _nuvioBusy = false);
+    }
+  }
+
+  Future<void> _toggleNuvioServer() async {
+    final s = context.read<AppState>();
+    setState(() => _nuvioBusy = true);
+    try {
+      final server = NuvioAddonServer.instance;
+      if (server.isRunning) {
+        await server.stop();
+        if (mounted) setState(() => _nuvioManifest = null);
+        _snack('Server addon fermato');
+      } else {
+        final url = await server.start(() => s.items);
+        if (mounted) setState(() => _nuvioManifest = url);
+        await Clipboard.setData(ClipboardData(text: url));
+        _snack('Server addon attivo. Manifest copiato negli appunti.');
+      }
+    } catch (e) {
+      _snack(e.toString());
+    } finally {
+      if (mounted) setState(() => _nuvioBusy = false);
+    }
+  }
+
+  Future<void> _copyNuvioManifest() async {
+    final url = _nuvioManifest ?? NuvioAddonServer.instance.manifestUrl;
+    if (url == null) {
+      _snack('Avvia prima il server addon.');
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: url));
+    _snack('URL manifest copiato');
+  }
+
+  Future<void> _openAddonReadme() async {
+    final opened = await launchUrl(
+      Uri.parse(
+          'https://github.com/Luke133yt/Media-Archive/tree/main/stremio_addon'),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) _snack('Impossibile aprire il link.');
   }
 
   Future<void> _exportCsv() async {
@@ -779,6 +856,75 @@ class _SettingsPageState extends State<SettingsPage> {
             ],
           ),
         ),
+        const SizedBox(height: 12),
+        GlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionTitle('Nuvio / Stremio'),
+              Text(
+                'Esporta il database e installa l’addon per vedere in Nuvio/Stremio '
+                'se un film è nella tua collezione fisica (con icona del formato). '
+                'Puoi anche avviare un server addon locale dalla app, oppure usare '
+                'la cartella stremio_addon con drag-and-drop / link Google Drive.',
+                style: TextStyle(
+                    color: adaptiveTextColor(context, opacity: .7),
+                    fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              Wrap(spacing: 10, runSpacing: 10, children: [
+                FilledButton.icon(
+                  onPressed:
+                      s.items.isEmpty || _nuvioBusy ? null : _uploadToNuvio,
+                  icon: _nuvioBusy
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.cloud_upload_outlined),
+                  label: const Text('Upload to Nuvio'),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: _nuvioBusy ? null : _toggleNuvioServer,
+                  icon: Icon(NuvioAddonServer.instance.isRunning
+                      ? Icons.stop_circle_outlined
+                      : Icons.dns_outlined),
+                  label: Text(NuvioAddonServer.instance.isRunning
+                      ? 'Ferma server addon'
+                      : 'Avvia server addon'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _copyNuvioManifest,
+                  icon: const Icon(Icons.link),
+                  label: const Text('Copia manifest'),
+                ),
+                TextButton.icon(
+                  onPressed: _openAddonReadme,
+                  icon: const Icon(Icons.menu_book_outlined),
+                  label: const Text('Guida addon'),
+                ),
+              ]),
+              if (_nuvioManifest != null) ...[
+                const SizedBox(height: 10),
+                SelectableText(
+                  _nuvioManifest!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: adaptiveTextColor(context, opacity: .75),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Stremio: apri stremio://… automaticamente da Upload. '
+                  'Nuvio: Impostazioni → Addons → incolla l’URL sopra.',
+                  style: TextStyle(
+                      color: adaptiveTextColor(context, opacity: .6),
+                      fontSize: 12),
+                ),
+              ],
+            ],
+          ),
+        ),
         const SizedBox(height: 16),
         GlassCard(
           child: Column(
@@ -839,7 +985,7 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: 20),
         Center(
           child: Text(
-            'Media Archive 1.12\nQuesto prodotto usa l\'API di TMDB ma non è approvato o certificato da TMDB.',
+            'Media Archive 1.13\nQuesto prodotto usa l\'API di TMDB ma non è approvato o certificato da TMDB.',
             textAlign: TextAlign.center,
             style: TextStyle(
                 color: adaptiveTextColor(context, opacity: .38), fontSize: 11),

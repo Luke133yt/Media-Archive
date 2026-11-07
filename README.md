@@ -29,6 +29,9 @@ These screenshots show the app with sample data. Avoid adding personal notes, ba
 - Search movies and series on **TMDB** and import posters, summaries, cast, crew, ratings and other available metadata.
 - Add or edit titles manually, including titles without a TMDB match. Replace a linked title or refresh its information later.
 - Browse a title's available TMDB poster and backdrop gallery; choose a local cover image when you prefer one.
+- Open a dedicated TMDB info page from an actor's filmography (separate from your physical copy).
+- Watch trailers and jump to streaming platforms (Nuvio, Stremio, Netflix, Prime Video, YouTube and others via TMDB/JustWatch).
+- Optional **Stremio / Nuvio addon** (`stremio_addon/`) that lists your physical collection and flags owned titles with format (DVD, Blu-ray, VHS…).
 - Track physical formats such as DVD, Blu-ray, VHS, LaserDisc, HD-DVD, CED and custom formats.
 - Save region, language, price, barcode, notes, personal review and half-star rating; rate physical copy quality with half-disc steps.
 - Mark a title as watched, archived on your server, or **Lost Media**. Search and filter the collection, including a Lost Media filter.

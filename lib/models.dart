@@ -310,3 +310,51 @@ class TmdbResult {
     this.overview = '',
   });
 }
+
+class TmdbVideo {
+  final String key;
+  final String name;
+  final String site;
+  final String type;
+  final bool official;
+
+  const TmdbVideo({
+    required this.key,
+    required this.name,
+    required this.site,
+    required this.type,
+    this.official = false,
+  });
+
+  bool get isYoutubeTrailer =>
+      site.toLowerCase() == 'youtube' &&
+      (type.toLowerCase() == 'trailer' || type.toLowerCase() == 'teaser');
+
+  String get youtubeUrl => 'https://www.youtube.com/watch?v=$key';
+}
+
+class WatchProviderInfo {
+  final int id;
+  final String name;
+  final String? logoPath;
+  final String offerType; // flatrate | rent | buy | free | ads
+
+  const WatchProviderInfo({
+    required this.id,
+    required this.name,
+    this.logoPath,
+    required this.offerType,
+  });
+}
+
+class WatchProvidersResult {
+  final String country;
+  final String? justWatchUrl;
+  final List<WatchProviderInfo> providers;
+
+  const WatchProvidersResult({
+    required this.country,
+    this.justWatchUrl,
+    this.providers = const [],
+  });
+}

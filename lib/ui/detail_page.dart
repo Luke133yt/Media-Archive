@@ -11,6 +11,7 @@ import 'format_icon.dart';
 import 'glass.dart';
 import 'image_gallery.dart';
 import 'person_page.dart';
+import 'streaming_section.dart';
 
 String _ago(DateTime d) {
   final days = DateTime.now().difference(d).inDays;
@@ -624,6 +625,13 @@ class _DetailPageState extends State<DetailPage> {
                         ],
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  StreamingSection(
+                    title: m.title,
+                    type: m.type,
+                    tmdbId: m.tmdbId,
+                    tmdb: state.tmdb,
                   ),
                   const SizedBox(height: 12),
 

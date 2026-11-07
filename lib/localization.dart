@@ -174,6 +174,45 @@ class AppStrings {
     'Foto': 'Photos',
     'Errore': 'Error',
     'Modifica': 'Edit',
+    'Scheda film': 'Title info',
+    'Guarda e trailer': 'Watch & trailer',
+    'Trailer': 'Trailer',
+    'Apri il trailer su YouTube': 'Open the trailer on YouTube',
+    'Nessun trailer trovato su TMDB.': 'No trailer found on TMDB.',
+    'Guarda in streaming': 'Watch streaming',
+    'Nascondi piattaforme': 'Hide platforms',
+    'Aggiungi alla collezione': 'Add to collection',
+    'Apri in collezione': 'Open in collection',
+    'Aggiunto alla collezione': 'Added to collection',
+    'Scheda informativa TMDB. Non corrisponde alla tua copia fisica.':
+        'TMDB info page. This is not your physical copy.',
+    'Nuvio / Stremio': 'Nuvio / Stremio',
+    'Esporta il database e installa l’addon per vedere in Nuvio/Stremio '
+            'se un film è nella tua collezione fisica (con icona del formato). '
+            'Puoi anche avviare un server addon locale dalla app, oppure usare '
+            'la cartella stremio_addon con drag-and-drop / link Google Drive.':
+        'Export your database and install the addon so Nuvio/Stremio can show '
+            'whether a title is in your physical collection (with format icon). '
+            'You can also start a local addon server from the app, or use the '
+            'stremio_addon folder with drag-and-drop / a Google Drive link.',
+    'Upload to Nuvio': 'Upload to Nuvio',
+    'Avvia server addon': 'Start addon server',
+    'Ferma server addon': 'Stop addon server',
+    'Copia manifest': 'Copy manifest',
+    'Guida addon': 'Addon guide',
+    'La collezione è vuota.': 'The collection is empty.',
+    'Backup pronto per Nuvio. Caricalo su Drive o nell’addon, oppure avvia il server locale.':
+        'Backup ready for Nuvio. Upload it to Drive or the addon, or start the local server.',
+    'Manifest copiato. Su Nuvio: Addons → incolla l’URL.':
+        'Manifest copied. In Nuvio: Addons → paste the URL.',
+    'Server addon fermato': 'Addon server stopped',
+    'Server addon attivo. Manifest copiato negli appunti.':
+        'Addon server running. Manifest copied to the clipboard.',
+    'Avvia prima il server addon.': 'Start the addon server first.',
+    'URL manifest copiato': 'Manifest URL copied',
+    'Botteghino': 'Box office',
+    'Recensioni (TMDB)': 'Reviews (TMDB)',
+    'Creato da': 'Created by',
   };
 
   static String translate(String value) {

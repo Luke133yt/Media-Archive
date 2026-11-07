@@ -238,6 +238,119 @@ class TmdbClient {
     }
     return paths;
   }
+
+  String get countryCode {
+    final parts = lang.split(RegExp(r'[-_]'));
+    if (parts.length >= 2 && parts[1].length == 2) {
+      return parts[1].toUpperCase();
+    }
+    return parts.first.toUpperCase() == 'EN' ? 'US' : parts.first.toUpperCase();
+  }
+
+  Future<List<TmdbVideo>> videos(int id, String type) async {
+    if (type != 'movie' && type != 'tv') return const [];
+    final j = await _get('/$type/$id/videos', {'language': lang});
+    var list = _parseVideos(j);
+    if (list.isEmpty && !lang.startsWith('en')) {
+      final en = await _get('/$type/$id/videos', {'language': 'en-US'});
+      list = _parseVideos(en);
+    }
+    list.sort((a, b) {
+      int rank(TmdbVideo v) {
+        final t = v.type.toLowerCase();
+        if (t == 'trailer' && v.official) return 0;
+        if (t == 'trailer') return 1;
+        if (t == 'teaser') return 2;
+        return 3;
+      }
+
+      return rank(a).compareTo(rank(b));
+    });
+    return list;
+  }
+
+  List<TmdbVideo> _parseVideos(Map<String, dynamic> j) {
+    final out = <TmdbVideo>[];
+    for (final v in (j['results'] as List? ?? const [])) {
+      final key = (v['key'] ?? '').toString();
+      if (key.isEmpty) continue;
+      out.add(TmdbVideo(
+        key: key,
+        name: (v['name'] ?? '').toString(),
+        site: (v['site'] ?? '').toString(),
+        type: (v['type'] ?? '').toString(),
+        official: v['official'] == true,
+      ));
+    }
+    return out;
+  }
+
+  Future<WatchProvidersResult> watchProviders(int id, String type) async {
+    if (type != 'movie' && type != 'tv') {
+      return WatchProvidersResult(country: countryCode);
+    }
+    final j = await _get('/$type/$id/watch/providers');
+    final results = (j['results'] as Map?) ?? const {};
+    final country = countryCode;
+    Map? entry = results[country] as Map?;
+    entry ??= results['US'] as Map?;
+    entry ??= results['IT'] as Map?;
+    if (entry == null && results.isNotEmpty) {
+      entry = results.values.first as Map?;
+    }
+    if (entry == null) {
+      return WatchProvidersResult(country: country);
+    }
+    final providers = <WatchProviderInfo>[];
+    final seen = <int>{};
+    for (final offer in ['flatrate', 'free', 'ads', 'rent', 'buy']) {
+      for (final p in (entry[offer] as List? ?? const [])) {
+        final pid = (p['provider_id'] as num?)?.toInt();
+        if (pid == null || !seen.add(pid)) continue;
+        providers.add(WatchProviderInfo(
+          id: pid,
+          name: (p['provider_name'] ?? '').toString(),
+          logoPath: p['logo_path'] as String?,
+          offerType: offer,
+        ));
+      }
+    }
+    return WatchProvidersResult(
+      country: country,
+      justWatchUrl: entry['link']?.toString(),
+      providers: providers,
+    );
+  }
+
+  Future<String?> imdbId(int id, String type) async {
+    if (type != 'movie' && type != 'tv') return null;
+    final j = await _get('/$type/$id/external_ids');
+    final imdb = (j['imdb_id'] ?? '').toString().trim();
+    return imdb.isEmpty ? null : imdb;
+  }
+
+  Future<List<TmdbResult>> trending(
+      {String mediaType = 'all', String window = 'week'}) async {
+    final j = await _get('/trending/$mediaType/$window');
+    final out = <TmdbResult>[];
+    for (final r in (j['results'] as List? ?? const [])) {
+      final type = (r['media_type'] ?? mediaType).toString();
+      if (type != 'movie' && type != 'tv') continue;
+      out.add(TmdbResult(
+        id: (r['id'] as num).toInt(),
+        type: type,
+        title: (type == 'movie' ? r['title'] : r['name'])?.toString() ?? '',
+        originalTitle:
+            (type == 'movie' ? r['original_title'] : r['original_name'])
+                    ?.toString() ??
+                '',
+        year: _year(type == 'movie' ? r['release_date'] : r['first_air_date']),
+        posterPath: r['poster_path'] as String?,
+        overview: (r['overview'] ?? '').toString(),
+      ));
+    }
+    return out;
+  }
 }
 
 /// Cerca il titolo associato a un codice a barre (EAN/UPC) tramite UPCitemdb
